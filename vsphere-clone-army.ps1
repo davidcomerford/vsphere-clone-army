@@ -148,6 +148,10 @@ $vmcount = Read-Host "How many VMs do you want?"
 Write-Host
 $nameprefix = Read-Host "VM name?"
 
+# Ask if the new VM should be powered on
+Write-Host
+$poweronafter = Read-Host "Power them on once deployed? [y/n]"
+
 
 # Summary and confirm
 Write-Host
@@ -173,7 +177,9 @@ $proceed = Read-Host
 
 # Loop and create
 FOR ($i=1; $i -le $vmcount; $i++) {
-    
+    # New VMs name
+    $vmname = "$nameprefix$i"
+
     # find the least busy host
     $targetvmhost = Get-Least-Busy-VMHost($cluster)
 
@@ -181,7 +187,11 @@ FOR ($i=1; $i -le $vmcount; $i++) {
     Write-Host -ForegroundColor Cyan "Creating $nameprefix$i on host $targetvmhost..."
 
     # Create VM
-    New-VM -VMHost $targetvmhost -Name $nameprefix$i -Datastore $datastore -Location $folder -Template $template | Out-Null
+    New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
+
+    IF($poweronafter -eq "y") {
+        Start-VM -VM $vmname
+    }
 }
 
 # Disconnect the session
