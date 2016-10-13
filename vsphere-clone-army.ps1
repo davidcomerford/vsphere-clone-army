@@ -4,7 +4,9 @@
   Creates lots of clones of a specified template
 
 .DESCRIPTION
-  <Brief description of script>
+  Do you have a need for loads of clones from a single template?
+  And do you hate clicking around a lot and wish a single script to do the job?
+  Well step right up, this script is for you!!!
 
 .PARAMETER <Parameter_Name>
   <Brief description of parameter input required. Repeat this attribute if required>
@@ -12,11 +14,11 @@
 .INPUTS Server
   Mandatory. The vCenter Server or ESXi Host the script will connect to, in the format of IP address or FQDN.
 
-.INPUTS Credentials
-  Mandatory. The user account credendials used to connect to the vCenter Server of ESXi Host.
+.INPUTS Username
+  Mandatory. The user account used to connect to the vCenter Server. Usually in the form of user.name@domain
 
 .OUTPUTS
-  <Outputs if any, otherwise state None>
+  Various tells you it worked!? It's great, you'll see
 
 .NOTES
   Version:        1.0
@@ -57,7 +59,6 @@ Function Connect-VMwareServer {
 
   Process {
     Try {
-      #$oCred = Get-Credential -Message 'Enter credentials to connect to vSphere Server or Host
       $passwordin = Read-Host -AsSecureString -Prompt "Enter password for $user@$VMServer"
       $password = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($passwordin))
 
@@ -110,29 +111,6 @@ Function Display-Folders {
 Function Get-Least-Busy-VMHost($cluster) {
     Get-VMHost -Location $cluster | Sort $_.CPuUsageMhz -Descending | Select -First 1
 }
-<#
-Function <FunctionName> {
-  Param ()
-  Begin {
-    Write-Host '<description of what is going on>...'
-  }
-  Process {
-    Try {
-      <code goes here>
-    }
-    Catch {
-      Write-Host -BackgroundColor Red "Error: $($_.Exception)"
-      Break
-    }
-  }
-  End {
-    If ($?) {
-      Write-Host 'Completed Successfully.'
-      Write-Host ' '
-    }
-  }
-}
-#>
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -205,7 +183,6 @@ FOR ($i=1; $i -le $vmcount; $i++) {
     # Create VM
     New-VM -VMHost $targetvmhost -Name $nameprefix$i -Datastore $datastore -Location $folder -Template $template | Out-Null
 }
-
 
 # Disconnect the session
 Disconnect-VIServer -Server $VMserver -Confirm:$false -force -WarningAction SilentlyContinue -ErrorAction SilentlyContinue | Out-Null
