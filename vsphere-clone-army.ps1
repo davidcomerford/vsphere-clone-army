@@ -44,6 +44,7 @@ Add-PSSnapin VMware.VimAutomation.Core -WarningAction SilentlyContinue
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 #Any Global Declarations go here
+$dashedline = "---------------------------"
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -57,7 +58,7 @@ Function Connect-VMwareServer {
   Process {
     Try {
       #$oCred = Get-Credential -Message 'Enter credentials to connect to vSphere Server or Host
-      $passwordin = Read-Host -AsSecureString -Prompt "Enter password for $user@$vcenter"
+      $passwordin = Read-Host -AsSecureString -Prompt "Enter password for $user@$VMServer"
       $password = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($passwordin))
 
       Connect-VIServer -Server $VMServer -User $user -Password $password -WarningAction SilentlyContinue -ErrorAction Stop
@@ -78,19 +79,36 @@ Function Connect-VMwareServer {
 }
 
 Function Display-Clusters {
+    Write-Host $dashedline
     Write-Host "Clusters"
+    Write-Host $dashedline
     Get-Cluster | Select Name -ExpandProperty Name
 }
 
 Function Display-Datastores($cluster) {
+    Write-Host $dashedline
     Write-Host "Datastores"
-    Get-Datastore -Location $cluster | where {$_.Extensiondata.Summary.MultipleHostAccess} | Select Name -ExpandProperty Name
+    Write-Host $dashedline
+    Get-Datastore -Location $cluster | where {$_.Extensiondata.Summary.MultipleHostAccess} | Select Name
 }
 
 Function Display-Templates($cluster) {
+    Write-Host $dashedline
     Write-Host "Templates"
+    Write-Host $dashedline
     Get-Template -Location $cluster | Select Name -ExpandProperty Name
     
+}
+
+Function Display-Folders {
+    Write-Host $dashedline
+    Write-Host "Folders"
+    Write-Host $dashedline
+    Get-Folder -Type VM | Select Name -ExpandProperty Name
+}
+
+Function Get-Least-Busy-VMHost($cluster) {
+    Get-VMHost -Location $cluster | Sort $_.CPuUsageMhz -Descending | Select -First 1
 }
 <#
 Function <FunctionName> {
@@ -118,7 +136,7 @@ Function <FunctionName> {
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-Connect-VMwareServer -VMServer $Server
+Connect-VMwareServer -VMServer $VMServer
 
 # List clusters
 Display-Clusters
@@ -137,6 +155,11 @@ Display-Templates($cluster)
 Write-Host
 $template = Read-Host "Which template will we use?"
 
+# List folders for destination
+Write-Host
+Display-Folders
+Write-Host
+$folder = Read-Host "Which folder will I deploy into?"
 
 # Ask for number of VMs to create
 Write-Host 
@@ -147,9 +170,40 @@ $vmcount = Read-Host "How many VMs do you want?"
 Write-Host
 $nameprefix = Read-Host "VM name?"
 
+
+# Summary and confirm
+Write-Host
+Write-Host
+Write-Host -ForegroundColor Green $dashedline
+Write-Host -ForegroundColor Green Summary
+Write-Host -ForegroundColor Green $dashedline
+Write-Host
+Write-Host "Cluster: $cluster"
+Write-Host "Datastore: $datastore"
+Write-Host "Template: $template"
+Write-Host "Quantity: $vmcount"
+Write-Host "Name: $nameprefix"
+Write-Host
+Write-Host -ForegroundColor Yellow "Start? [y/n]" -NoNewline
+
+$proceed = Read-Host
+  if ($proceed -eq "n") {
+    Write-Host "Exiting"
+    exit
+   }
+
+
 # Loop and create
 FOR ($i=1; $i -le $vmcount; $i++) {
-    Write-Host $nameprefix$i
+    
+    # find the least busy host
+    $targetvmhost = Get-Least-Busy-VMHost($cluster)
+
+    # print some stuff
+    Write-Host -ForegroundColor Cyan "Creating $nameprefix$i on host $targetvmhost..."
+
+    # Create VM
+    New-VM -VMHost $targetvmhost -Name $nameprefix$i -Datastore $datastore -Location $folder -Template $template | Out-Null
 }
 
 
