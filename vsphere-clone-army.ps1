@@ -41,7 +41,7 @@ param(
 #$ErrorActionPreference = 'SilentlyContinue'
 
 #Import Modules & Snap-ins
-Add-PSSnapin VMware.VimAutomation.Core -WarningAction SilentlyContinue
+Add-PSSnapin VMware.VimAutomation.Core | Out-Null
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -177,8 +177,11 @@ $proceed = Read-Host
 
 # Loop and create
 FOR ($i=1; $i -le $vmcount; $i++) {
+    #
+    $vmnumberpadded = "{0:D2}" -f $i
+    
     # New VMs name
-    $vmname = "$nameprefix$i"
+    $vmname = "$nameprefix$vmnumberpadded"
 
     # find the least busy host
     $targetvmhost = Get-Least-Busy-VMHost($cluster)
@@ -187,7 +190,8 @@ FOR ($i=1; $i -le $vmcount; $i++) {
     Write-Host -ForegroundColor Cyan "Creating $nameprefix$i on host $targetvmhost..."
 
     # Create VM
-    New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
+    #New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
+    Write-Host "New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template"
 
     IF($poweronafter -eq "y") {
         Start-VM -VM $vmname
