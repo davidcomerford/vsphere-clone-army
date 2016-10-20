@@ -41,7 +41,7 @@ param(
 #$ErrorActionPreference = 'SilentlyContinue'
 
 #Import Modules & Snap-ins
-Add-PSSnapin VMware.VimAutomation.Core | Out-Null
+Add-PSSnapin VMware.VimAutomation.Core -ErrorAction SilentlyContinue
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
