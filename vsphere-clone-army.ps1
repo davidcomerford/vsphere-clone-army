@@ -190,8 +190,7 @@ FOR ($i=1; $i -le $vmcount; $i++) {
     Write-Host -ForegroundColor Cyan "Creating $nameprefix$i on host $targetvmhost..."
 
     # Create VM
-    #New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
-    Write-Host "New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template"
+    New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
 
     IF($poweronafter -eq "y") {
         Start-VM -VM $vmname
