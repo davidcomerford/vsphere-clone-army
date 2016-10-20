@@ -187,12 +187,13 @@ FOR ($i=1; $i -le $vmcount; $i++) {
     $targetvmhost = Get-Least-Busy-VMHost($cluster)
 
     # print some stuff
-    Write-Host -ForegroundColor Cyan "Creating $nameprefix$i on host $targetvmhost..."
+    Write-Host -ForegroundColor Cyan "Creating $vmname on host $targetvmhost..."
 
     # Create VM
     New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
 
     IF($poweronafter -eq "y") {
+        sleep 5
         Start-VM -VM $vmname
     }
 }
