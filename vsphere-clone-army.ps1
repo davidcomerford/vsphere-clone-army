@@ -21,10 +21,9 @@
   Various tells you it worked!? It's great, you'll see
 
 .NOTES
-  Version:        1.0
   Author:         David Comerford
-  Creation Date:  12-10-2016
-  Purpose/Change: Initial script development
+  Last Update:    15-11-2016
+  Github:         https://github.com/davidcomerford/vsphere-clone-army
 
 #>
 
@@ -79,27 +78,16 @@ Function Connect-VMwareServer {
   }
 }
 
-Function Display-Clusters {
-    Write-Host $dashedline
-    Write-Host "Clusters"
-    Write-Host $dashedline
-    Get-Cluster | Select Name -ExpandProperty Name
+
+Function GetItem($list) {
+    foreach ($item in $list) {
+	    Write-Host $list.IndexOf($item): $item
+    }
+    Write-Host
+    $selection = Read-Host "Enter selection"
+    return $list[$selection]
 }
 
-Function Display-Datastores($cluster) {
-    Write-Host $dashedline
-    Write-Host "Datastores"
-    Write-Host $dashedline
-    Get-Datastore -Location $cluster | where {$_.Extensiondata.Summary.MultipleHostAccess} | Select Name
-}
-
-Function Display-Templates($cluster) {
-    Write-Host $dashedline
-    Write-Host "Templates"
-    Write-Host $dashedline
-    Get-Template -Location $cluster | Select Name -ExpandProperty Name
-    
-}
 
 Function Display-Folders {
     Write-Host $dashedline
@@ -109,7 +97,7 @@ Function Display-Folders {
 }
 
 Function Get-Least-Busy-VMHost($cluster) {
-    Get-VMHost -Location $cluster | Sort $_.CPuUsageMhz -Descending | Select -First 1
+    Get-VMHost -Location $cluster | Sort-Object CPuUsageMhz | Select -First 1
 }
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
@@ -117,30 +105,46 @@ Function Get-Least-Busy-VMHost($cluster) {
 Connect-VMwareServer -VMServer $VMServer
 
 # List clusters
-Display-Clusters
-Write-Host
-$cluster = Read-Host "Which cluster will we deploy to?"
+Write-Host -ForegroundColor White $dashedline
+Write-Host -ForegroundColor White Pick a Cluster 
+Write-Host -ForegroundColor White $dashedline
+
+$clusterlist = Get-Cluster
+$cluster = GetItem($clusterlist)
+Write-Host -ForegroundColor Yellow "Selected: $cluster"
+
 
 # List datastores in a cluster
-Write-Host
-Display-Datastores($cluster)
-Write-Host
-$datastore = Read-Host "Which datastore will we use?"
+Write-Host -ForegroundColor White $dashedline
+Write-Host -ForegroundColor White Pick a Datastore
+Write-Host -ForegroundColor White $dashedline
+
+$datastorelist = Get-Cluster $cluster | Get-VMHost | Select -first 1 | Get-Datastore | where {$_.Extensiondata.Summary.MultipleHostAccess} 
+$datastore = GetItem($datastorelist)
+Write-Host -ForegroundColor Yellow "Selected: $datastore"
+
 
 # List templates in a cluster
-Write-Host
-Display-Templates($cluster)
-Write-Host
-$template = Read-Host "Which template will we use?"
+Write-Host -ForegroundColor White $dashedline
+Write-Host -ForegroundColor White Template to deploy
+Write-Host -ForegroundColor White $dashedline
+
+$templatelist = Get-Template
+$template = GetItem($templatelist)
+Write-Host -ForegroundColor Yellow "Selected: $template"
+
 
 # List folders for destination
-Write-Host
-Display-Folders
-Write-Host
-$folder = Read-Host "Which folder will I deploy into?"
+Write-Host -ForegroundColor White $dashedline
+Write-Host -ForegroundColor White Destination Folder
+Write-Host -ForegroundColor White $dashedline
+
+$folderlist = Get-Folder -Type VM
+$folder = GetItem($folderlist)
+Write-Host -ForegroundColor Yellow "Selected: $folder"
+
 
 # Ask for number of VMs to create
-Write-Host 
 Write-Host
 $vmcount = Read-Host "How many VMs do you want?"
 
@@ -158,7 +162,6 @@ $poweronafter = Read-Host "Power them on once deployed? [y/n]"
 
 
 # Summary and confirm
-Write-Host
 Write-Host
 Write-Host -ForegroundColor Green $dashedline
 Write-Host -ForegroundColor Green Summary
@@ -196,11 +199,10 @@ FOR ($i=$startnumber; $i -lt $targetnumber; $i++) {
     Write-Host -ForegroundColor Cyan "Creating $vmname on host $targetvmhost..."
 
     # Create VM
-    New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template | Out-Null
+    New-VM -VMHost $targetvmhost -Name $vmname -Datastore $datastore -Location $folder -Template $template 
 
     IF($poweronafter -eq "y") {
-        sleep 5
-        Start-VM -VM $vmname
+        start-VM -VM $vmname
     }
 }
 
