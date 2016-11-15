@@ -148,6 +148,10 @@ $vmcount = Read-Host "How many VMs do you want?"
 Write-Host
 $nameprefix = Read-Host "VM name?"
 
+# Ask for starting vM number.
+Write-Host
+[int]$startnumber = Read-Host "First VM number?"
+
 # Ask if the new VM should be powered on
 Write-Host
 $poweronafter = Read-Host "Power them on once deployed? [y/n]"
@@ -176,7 +180,9 @@ $proceed = Read-Host
 
 
 # Loop and create
-FOR ($i=1; $i -le $vmcount; $i++) {
+$targetnumber = $startnumber+$vmcount
+
+FOR ($i=$startnumber; $i -lt $targetnumber; $i++) {
     #
     $vmnumberpadded = "{0:D2}" -f $i
     
@@ -201,4 +207,4 @@ FOR ($i=1; $i -le $vmcount; $i++) {
 # Disconnect the session
 Disconnect-VIServer -Server $VMserver -Confirm:$false -force -WarningAction SilentlyContinue -ErrorAction SilentlyContinue | Out-Null
 Write-Host
-Write-Host "Disconnected from $Server"
+Write-Host "Disconnected from $VMserver"
